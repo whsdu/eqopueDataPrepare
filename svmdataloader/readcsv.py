@@ -56,7 +56,6 @@ def readcsvFileList(filePathList,suffix=None):
                         ["engagedDimension"] * len(filePathList)
                         )
                      }
-    print filterList
 
     csvResult = {
         getFileCategory(filePath):

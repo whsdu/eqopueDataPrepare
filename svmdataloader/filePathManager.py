@@ -7,3 +7,8 @@ def getCSVjsonPath():
 def getSQLjsonPath():
     dbinforJSONpath = "/home/wh/PycharmProjects/eqopueDataProcess/dbloader/dbhost.json"
     return dbinforJSONpath
+
+
+def getCSVroot():
+    rootdir = "/home/wh/PycharmProjects/eqopueTestData/polling"
+    return rootdir
