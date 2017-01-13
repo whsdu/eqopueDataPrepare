@@ -177,6 +177,13 @@ def dataJoin(leftCSVDicts,rightCSVDicts,joinKeyList=None,left_on = None,right_on
             not all(set(joinKeyList).issubset(set(dataFrame.keys())) for dataFrame in [leftframe,rightframe]):
         return (None,"At least one dataset doesn't contain one of these common join keys!" )
 
+    if joinKeyList is not None:
+        leftjoin = merge(leftframe, rightframe, how=how, on=joinKeyList)
+        leftjoin.fillna(fnan, inplace=True)
+        leftjoinDicts = lists2dicts(leftjoin.columns.values, leftjoin.as_matrix()[1:])
+
+        return (len(leftjoinDicts),leftjoinDicts)
+
     if left_on is not None and \
                     right_on is not None and \
                         not all(
@@ -217,7 +224,7 @@ def groupbyDict(csvByModuleDicts,lambda4keys,groupOpeartionF):
 
     outputlists = list()
     for k, g in groupby(sortedlist,lambda4keys):
-        outputlists.append(list(k)+[groupOpeartionF(g)])
+        outputlists.append(list(k)+groupOpeartionF(g))
 
     return outputlists
 
@@ -275,6 +282,15 @@ def removeDimensions(csvByModuleDicts,removeKey):
     return amended
 
 
+def removeDimensionsOrdered(csvByModuleDicts,removeKey):
+    import copy
+    ntd = copy.deepcopy(csvByModuleDicts)
+
+    for d in ntd:
+        for key in removeKey:
+            del d[key]
+
+    return ntd
 """
     Type: [{Dimension:Float}] -> ( Hashable::a ==> a -> b -> c ) -> [{Dimension:Float}]
     Applicative Paras:

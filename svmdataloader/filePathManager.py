@@ -12,3 +12,5 @@ def getSQLjsonPath():
 def getCSVroot():
     rootdir = "/home/wh/PycharmProjects/eqopueTestData/polling"
     return rootdir
+
+
