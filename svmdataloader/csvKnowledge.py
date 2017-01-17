@@ -21,11 +21,11 @@ def scan3dDatetime(g):
 
     last = datetime.datetime(1970,1,1,0,0,0)
     for r in g:
-        dString = r[2]
+        dString = r[-1]
         dt = datetime.datetime.strptime(dString,"%Y/%m/%d %M:%S")
         if last < dt:
             last = dt
-            rl = r[:2]+ r[4:]
+            rl = r[1:]
 
     return rl
 
@@ -125,6 +125,10 @@ def str2num(dicts, exkeylists):
                 else: d[k] = float(v)
 
 
+def boottreeAve(g):
+    import numpy as np
+    nbt = np.array([r[2:]for r in g]).mean(0)
+    return list(nbt)
 
 if __name__=="__main__":
     boottreeMapping = getBoottreeMapping()

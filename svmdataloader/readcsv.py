@@ -281,7 +281,9 @@ def removeDimensions(csvByModuleDicts,removeKey):
         ]
     return amended
 
-
+"""
+    remove dimension while keep the order of keys
+"""
 def removeDimensionsOrdered(csvByModuleDicts,removeKey):
     import copy
     ntd = copy.deepcopy(csvByModuleDicts)
