@@ -38,6 +38,27 @@ def dictsExamer(dicts,dimension):
 
     return (errorJSON,dimensionDict)
 
+def excludeFailedRow(dicts,dimension):
+    import collections
+
+    dictList = list()
+    for d in dicts:
+        scanStr = d.get(dimension, None)
+
+        if scanStr is None: return (None, "Dimension name does not exist!")
+
+        decoder = json.JSONDecoder(object_pairs_hook=collections.OrderedDict)
+        if "nan" in scanStr: continue
+        try:
+            scandict = decoder.decode(scanStr)
+        except:
+            continue
+        d[dimension] = scanStr
+        dictList.append(d)
+
+    return (len(dictList), dictList)
+
+
 def str2dicts(dicts,dimension):
     import collections
     import copy

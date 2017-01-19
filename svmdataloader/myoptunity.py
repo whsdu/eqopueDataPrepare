@@ -16,11 +16,11 @@ import sklearn
 def train_model(x_train, y_train, kernel, C, logGamma, degree, coef0):
     """A generic SVM training function, with arguments based on the chosen kernel."""
     if kernel == 'linear':
-        model = sklearn.svm.SVC(kernel=kernel, C=C)
+        model = sklearn.svm.SVC(kernel=kernel, C=C,decision_function_shape='ovo')
     elif kernel == 'poly':
-        model = sklearn.svm.SVC(kernel=kernel, C=C, degree=degree, coef0=coef0)
+        model = sklearn.svm.SVC(kernel=kernel, C=C, degree=degree, coef0=coef0,decision_function_shape='ovo')
     elif kernel == 'rbf':
-        model = sklearn.svm.SVC(kernel=kernel, C=C, gamma=10 ** logGamma)
+        model = sklearn.svm.SVC(kernel=kernel, C=C, gamma=10 ** logGamma,decision_function_shape='ovo')
     else:
         raise argparse.ArgumentError("Unknown kernel function: %s" % kernel)
     model.fit(x_train, y_train)
