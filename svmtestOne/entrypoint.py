@@ -20,7 +20,7 @@ def myCrossValidTest(x, y, num_folds,spaceFlat):
     print("Optimal parameters" + str(optimal_svm_pars))
     print("AUROC of tuned SVM: %1.3f" % info.optimum)
 
-def myCrossValid(x, y, num_folds,spaceFlat,paraDicts):
+def myCrossValid(x, y, num_folds,spaceFlat,paraQue=None):
     from svmdataloader import svm_tuned_auroc
     import copy
     cx = copy.deepcopy(x)
@@ -34,7 +34,7 @@ def myCrossValid(x, y, num_folds,spaceFlat,paraDicts):
     print ""
     print spaceFlat
     print optimal_svm_pars
-    paraDicts.put({int(spaceFlat):optimal_svm_pars})
+    paraQue.put({int(spaceFlat):optimal_svm_pars})
     return optimal_svm_pars
 
 def myPredictReport(optimal_svm_pars,yp,Xset,Yset):

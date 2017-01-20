@@ -258,6 +258,9 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
     X = data_set[:, 2:]
     y = data_set[:, 1]
 
+    print data_set[0]
+    print X[0]
+    print y[0]
     return (X,y)
 
 if __name__=="__main__":
