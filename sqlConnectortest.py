@@ -82,7 +82,7 @@ def unifiyDimension():
     print len(dicts[0].keys())
     print len(ndictLists[0].keys())
 
-def getDB(queryStatement,hostname,dbname):
+def getDBuserscaninfo(queryStatement,hostname,dbname):
     dicts = sqlQuery(queryStatement, hostname, dbname)
     mejson, mdimensionDict = dictsExamer(dicts, "measurement_items")
 
@@ -108,8 +108,25 @@ def getDB(queryStatement,hostname,dbname):
     print scanDimensionNamesSides
     print userinfoScan[0]
 
+    splitLR = rowSplit(filteredDicts, 'measurement_items', extractScanDataLR)
+    scanDimensionNames = getScanDimensionName(filteredDicts[0].get("measurement_items"))
+    userinfoScanLR = lists2dicts(
+        filteredDicts[0].keys()[:(filteredDicts[0].keys().index("measurement_items"))] + ["side"] + scanDimensionNames,
+        splitLR
+    )
+
+    print userinfoScanLR[0]
+
     fixDicts = removeDimensionsOrdered(userinfoScan,["customer_info"])
+    fixDictsLR = removeDimensionsOrdered(userinfoScanLR,["customer_info"])
+    print ""
     print fixDicts[0]
+    print len(fixDicts[0].keys())
+
+    print fixDictsLR[0]
+    print len(fixDictsLR[0].keys())
+
+    return fixDicts
 
 if __name__ == "__main__":
     # testStatement()
@@ -123,7 +140,29 @@ if __name__ == "__main__":
     dbname = "t_dlodb"
     dicts = sqlQuery(queryStatement,hostname,dbname)
 
-    getDB(queryStatement, hostname, dbname)
+    fixDicts = getDBuserscaninfo(queryStatement, hostname, dbname)
+    print fixDicts[0].values()[4:]
+    print len(fixDicts[0].values()[4:])
+
+    print " "
+    dbconnection,dbCur = testConnection(hostname,dbname)
+    print dbconnection
+    print dbCur
+
+    hostlist = [hostname,"unknowhost"]
+    dblist = [dbname,"unknowndb"]
+
+    testTuple = [(h,d) for h in hostlist for d in dblist]
+
+
+    for t in testTuple:
+        h,d = t
+        dbconnection, dbCur = testConnection(h, d)
+        print ""
+        print "start testing testConnection function: host: " + str(h) + " dbname: " + str(d)
+        print dbconnection
+        print dbCur
+
 
     # errorjson,dimensionDict = dictsExamer(dicts,"customer_info")
     #

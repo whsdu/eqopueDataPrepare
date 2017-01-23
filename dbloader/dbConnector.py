@@ -14,7 +14,12 @@ def sqlQuery(statement,hostname,dbname,lazySize = 1000):
     for row in dataGenrator:
         dicts.append(collections.OrderedDict(zip(filedNames,row)))
 
+    dbconnection.close()
     return dicts
+
+def testConnection(hostname,dbname):
+    dbconnection, dbCur = getMysqlCon(hostname, dbname)
+    return dbconnection, dbCur
 
 def dictsExamer(dicts,dimension):
     import collections

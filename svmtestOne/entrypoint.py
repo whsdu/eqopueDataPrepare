@@ -5,6 +5,125 @@ import sys
 from sklearn import preprocessing
 from multiprocessing import Process,Queue
 
+def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
+    import sys
+    import numpy as np
+    cnt, dictLists = getManifold(key, rootdir, fileNamingPolicyTwo, suffix)
+
+    if cnt is None:
+        # logging goes here with the dictList carry error information
+        sys.exit(0)
+
+    suitsizeDictLists, scanDictLists, userInfoDictLists, answerDictLists, boottreeDictLists = dictLists
+
+    ### Merge Userinfor and scan3D infor
+    jcnt, dJoint1 = dataJoin(userInfoDictLists, scanDictLists, left_on=['userid'], right_on=['fcode'], how='inner')
+    if jcnt is None: return (jcnt,dJoint1)
+    dJoint1r = removeDimensionsOrdered(dJoint1, ['fcode'])
+    ntd = groupbyDict(dJoint1r, lambda x: [x[list(dJoint1r[0].keys()).index("userid")]], scan3dDatetime)
+    userinfoscan = lists2dicts(['userid', 'sex', 'height', 'weight', 'usualsize', 'scandata'], ntd)
+
+    # print ntd[0]
+    # print userinfoscan[0]
+    # mejson, mdimensionDict = dictsExamer(userinfoscan,'scandata')
+    # print "mejson: " + str(mejson)
+    # print "mdimensionDict: "
+    # print mdimensionDict.keys()
+    # print ""
+
+    ### Clean failed scandata ( Such as unfinished JSON object )
+    fejson, userinfoscanFiltered = excludeFailedRow(userinfoscan, 'scandata')
+    # print "fejson: " + str(fejson)
+    # print len(userinfoscan)
+    # print "fdimensionDict: "
+    # print userinfoscanFiltered[0].keys()
+    # print ""
+
+    userinfoscan = userinfoscanFiltered
+
+    ### Extract scanData by foot position (Left and Right)
+    splitLR = rowSplit(userinfoscan, 'scandata', extractScanDataLR)
+    scanDimensionNames = getScanDimensionName(userinfoscan[0].get("scandata"))
+    userinfoScanLR = lists2dicts(
+        userinfoscan[0].keys()[:(userinfoscan[0].keys().index("usualsize") + 1)] + ["side"] + scanDimensionNames,
+        splitLR
+    )
+    # print ""
+    # print userinfoScanLR[0]
+    # print userinfoScanLR[1]
+
+    ### Extract scanData, concatenate left and right.
+    split = rowSplit(userinfoscan, 'scandata', extractScanData)
+    scanDimensionNamesSides = getScanDimensionNameSides(userinfoscan[0].get("scandata"))
+    userinfoScan = lists2dicts(userinfoscan[0].keys()[:5] + scanDimensionNamesSides, split)
+    # print ""
+    # print userinfoScan[0]
+    # print userinfoScan[1]
+
+    ### Get the mapping relation between shoes' itemID and styleid.
+    ### Merge the fitSize record with shoes' Info
+    boottreeMapping = getBoottreeMapping()
+    jcnt2, suitSizeDicts = dataJoin(suitsizeDictLists, boottreeMapping, left_on=['itemid'], right_on=['itemid'],
+                                    how='inner')
+
+    # print ""
+    # print jcnt2
+    # print suitSizeDicts[0]
+    # #
+
+    ### Merge suitsize, userinfo with shoes infor ==> Userinfo, suitsize, User3DScan, shoesID, shoesStyleid
+    jcnt3, suitUserScanInfo = dataJoin(suitSizeDicts, userinfoScan, left_on=['userid'], right_on=['userid'],
+                                       how='inner')
+    # print ""
+    # print jcnt3
+    # print suitUserScanInfo[0]
+
+
+    ### Clearn Boottree infor
+    filter(lambda d: len(d.get("styleid", "W")) >= 5, boottreeDictLists)
+    map(replaceV, boottreeDictLists)
+    str2num(boottreeDictLists, ["styleid", "boottreeid", ])
+    str2num(suitUserScanInfo, ['userid', 'styleid', ])
+    #
+    # print ""
+    # print boottreeDictLists[0]
+    # print suitUserScanInfo[0]
+
+    ### Generate boottreeinfor for a given Shooe style  
+    boottreeAveList = groupbyDict(boottreeDictLists, lambda r: [r[list(boottreeDictLists[0].keys()).index("styleid")]],
+                                  boottreeAve)
+    boottreeDictAve = lists2dicts(["styleid"] + boottreeDictLists[0].keys()[2:], boottreeAveList)
+    # print boottreeDictAve[0]
+    # print boottreeDictAve[0].keys()
+    # print len(boottreeDictAve[0].keys())
+    #
+    jcnt4, userinfoScanBoottree = dataJoin(suitUserScanInfo, boottreeDictLists, joinKeyList=['styleid', 'size'],
+                                           how='inner')
+
+    # print ""
+    # print jcnt4
+    # print userinfoScanBoottree[0]
+
+    jcnt5, userinfoScanBoottreeAve = dataJoin(suitUserScanInfo, boottreeDictAve, joinKeyList=['styleid'], how='inner')
+    # print ""
+    # print jcnt5
+    # print userinfoScanBoottreeAve[0]
+    # print len(userinfoScanBoottreeAve[0].keys())
+
+    rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x"])
+    # print rX[0]
+
+    keys, lists = dicts2lists(rX)
+    # print keys
+    data_set = np.asarray(lists)
+    X = data_set[:, 2:]
+    y = data_set[:, 1]
+
+    # print data_set[0]
+    # print X[0]
+    # print y[0]
+    return (X,y)
+
 def myCrossValidTest(x, y, num_folds,spaceFlat):
     from svmdataloader import svm_tuned_auroc
     import copy
@@ -142,7 +261,7 @@ if __name__ == "__main__":
     rootdir = getCSVroot()
     # belleJSON = getCSVjsonPath()
     key = "belle"
-    suffix = "11_1"
+    suffix = "12_1"
 
     (X,y) = getDataSet(key,rootdir,fileNamingPolicyTwo,suffix)
 
@@ -175,26 +294,26 @@ if __name__ == "__main__":
 
     print cntD
 
-    paraQueue = Queue()
-    paraDicts = dict()
-
-    for ytuple in labelList:
-        yf,tmpY = ytuple
-        tmpp = Process(target=myCrossValid, args=(ux,tmpY,5,yf,paraQueue,))
-        tmpp.start()
-        plist.append(tmpp)
-
-
-    for p in plist:
-        p.join()
-        print ""
-        paraDicts.update(paraQueue.get())
-
-    print ""
-
-    for k,v in paraDicts.iteritems():
-        print k
-        print v
+    # paraQueue = Queue()
+    # paraDicts = dict()
+    #
+    # for ytuple in labelList:
+    #     yf,tmpY = ytuple
+    #     tmpp = Process(target=myCrossValid, args=(ux,tmpY,5,yf,paraQueue,))
+    #     tmpp.start()
+    #     plist.append(tmpp)
+    #
+    #
+    # for p in plist:
+    #     p.join()
+    #     print ""
+    #     paraDicts.update(paraQueue.get())
+    #
+    # print ""
+    #
+    # for k,v in paraDicts.iteritems():
+    #     print k
+    #     print v
 
 
 #
@@ -210,25 +329,25 @@ if __name__ == "__main__":
 #
 # ##<<======================================================>>
 #
-    modelDict = dict()
-    for k,v in paraDicts.iteritems():
-        for r in labelList:
-            (yl, tmpY) = r
-            if int(k) == int(yl):
-                modelDict[k] = myPredictReport(v, k, ux, tmpY)
+#     modelDict = dict()
+#     for k,v in paraDicts.iteritems():
+#         for r in labelList:
+#             (yl, tmpY) = r
+#             if int(k) == int(yl):
+#                 modelDict[k] = myPredictReport(v, k, ux, tmpY)
+# #
+#     savePKL("./tmpModels.pkl",modelDict)
 #
-    savePKL("./tmpModels.pkl",modelDict)
-
-    tmpDict = readPKL("./tmpModels.pkl")
-    for k,m in modelDict.iteritems():
-        print ""
-        print k
-        print m
-
-    print tmpDict
-    print modelDict
-
-    testMyOneVsRest(tmpDict,ux,uy)
+#     tmpDict = readPKL("./tmpModels.pkl")
+#     for k,m in modelDict.iteritems():
+#         print ""
+#         print k
+#         print m
+#
+#     print tmpDict
+#     print modelDict
+#
+#     testMyOneVsRest(tmpDict,ux,uy)
 
     # ##<<======================================================>>
 

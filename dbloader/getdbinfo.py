@@ -35,15 +35,16 @@ def getDBconnection(dbinfor,dbname):
                                   db = dbname)
     return dbconnection
 
-def getMysqlCon(dbhost,dbname):
+def getMysqlCon(dbhost,dbname,failCounter = 0):
     DBinfo = getSQLdbinfo(dbhost)
     DBname = dbname
 
     try:
         DBconnection = getDBconnection(DBinfo,DBname)
     except Exception as e:
-        time.sleep(20)
-        return getMysqlCon(dbhost,dbname)
+        if failCounter == 10: return [None, e]
+        time.sleep(2)
+        return getMysqlCon(dbhost,dbname,failCounter +1)
 
     dbCur = DBconnection.cursor()
 
