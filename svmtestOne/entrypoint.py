@@ -110,19 +110,38 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
     # print userinfoScanBoottreeAve[0]
     # print len(userinfoScanBoottreeAve[0].keys())
 
-    rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x"])
+    rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x","size_y"])
     # print rX[0]
-
     keys, lists = dicts2lists(rX)
-    # print keys
+
+    nrX = normalizeByNameSets(rX,[
+        ['height','weight','usualsize'],
+        [k for i, k in enumerate(keys) if (i >= keys.index("foot_length_original_left") and i <= keys.index("below_knee_girth_right"))],
+        ["bathickness","bbthickness"],
+        [k for i, k in enumerate(keys) if (i >= keys.index("d1") and i <= keys.index("d19"))],
+    ])
+
+    print rX[0]
+    print rX[1]
+    print ""
+    print nrX[0]
+    print nrX[1]
+
+    nkeys, nlists = dicts2lists(nrX)
+    ndata_set = np.asarray(nlists)
+    nX = ndata_set[:,2:]
+    ny = ndata_set[:,1]
+
+    print keys
     data_set = np.asarray(lists)
     X = data_set[:, 2:]
     y = data_set[:, 1]
 
-    # print data_set[0]
+    print rX[0].keys()
+    print data_set[0]
     # print X[0]
     # print y[0]
-    return (X,y)
+    return [(X,y),(nX,ny),rX,nrX]
 
 def myCrossValidTest(x, y, num_folds,spaceFlat):
     from svmdataloader import svm_tuned_auroc
@@ -197,11 +216,11 @@ def testMyOneVsRest(modelDict,ux,uy):
             print y_train[i]
 
     print ""
-    for e in errorlist:
-        print e
-
-    for r in elist:
-        print r
+    # for e in errorlist:
+    #     print e
+    #
+    # for r in elist:
+    #     print r
 
     print len(errorlist)
     print len(X_train)
@@ -257,43 +276,148 @@ def readPKL(filename):
 
     return loadObj
 
+def getRBFparas(logGammaStep = 1, logGammaRange = [-5,0],CStep = 100,CRange = [100,1000]):
+
+    lowerL,upperL = logGammaRange
+    lowerC,upperC = CRange
+
+
+    logGammaList = range(lowerL,upperL+logGammaStep,logGammaStep)
+
+    # Clist = range(lowerC,upperC+CStep,CStep)
+    Clist = [0.1, 1, 10, 100, 1000]
+
+    return [[C,l] for l in logGammaList for C in Clist]
+
+def simpleSVC(X,y,paras,paraQue):
+    from sklearn.cross_validation import train_test_split
+    from sklearn.svm import SVC
+    from sklearn.metrics import classification_report
+    import pickle
+
+    C,logGamma = paras
+
+    X_normalized = preprocessing.normalize(X, norm='l2')
+    X_train, X_test, y_train, y_test = train_test_split(X_normalized, y, test_size=0.20)
+
+    model = SVC(kernel='rbf', C=C, gamma=10 ** logGamma)
+    model.fit(X_train, y_train)
+    y_pred = model.predict(X_test)
+
+    report = classification_report(y_test, y_pred)
+    key = "C:"+str(C)+"_"+"logGamma:"+str(logGamma)
+
+    sr = report.split()
+    accu = float(sr[sr.index('total') + 1])
+    if accu >= 0.75:
+        modelName = key + '.pkl'
+        with open('Model/' + modelName, 'wb') as f:
+            pickle.dump(model, f)
+
+    paraQue.put({key: report})
+
+    return report
+
+def seqList(initlist,inputlist,seq):
+    if seq>=len(inputlist):
+        initlist.append(inputlist)
+        return initlist
+    if seq<len(inputlist):
+        initlist.append(inputlist[0:seq])
+        return seqList(initlist,inputlist[seq:],seq)
+
+# def listStream(list, number=1000):
+#     fetch = cursor.fetchmany
+#     while True:
+#         rows = fetch(some)
+#         if not rows: break
+#         for row in rows:
+#             yield row
+
 if __name__ == "__main__":
     rootdir = getCSVroot()
     # belleJSON = getCSVjsonPath()
     key = "belle"
-    suffix = "12_1"
+    suffix = "11_1"
 
-    (X,y) = getDataSet(key,rootdir,fileNamingPolicyTwo,suffix)
+    [(X,y),(nX,ny),rX,nrX] = getDataSet(key,rootdir,fileNamingPolicyTwo,suffix)
+
+    # save2CSV(rX,"noNormalized.csv")
+    # save2CSV(nrX,"nomrliazed.csv")
 
     X_normalized = preprocessing.normalize(X, norm='l2')
     print X_normalized[0]
 
-    ux = X_normalized
-    uy = y
+    # ux = X_normalized
+    # uy = y
 
-    labels = set(list(uy))
+    ux = nX
+    uy = ny
 
-    labelList = list()
+### =====================================================####
+    paras = getRBFparas()
+
+    paraQueue = Queue()
+    paraDicts = dict()
     plist = list()
-    print ""
-    print labels
-    for yl in sorted(list(labels))[1:-1]:
-        tmpY = map(lambda r: r<=yl,list(uy))
-        labelList.append((yl,tmpY))
-    # labelList.append((sorted(list(labels))[0],[x == sorted(list(labels))[0] for x in list(uy)]))
-    # labelList.append((sorted(list(labels))[-1], [x == sorted(list(labels))[-1] for x in list(uy)]))
+    tmplist = list()
+    listSequments = seqList(tmplist, paras, 5)
+    maxDict = {"para": "initial", "accu": 0}
 
+    for subParas in listSequments:
+        for para in subParas:
+            tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
+            tmpp.start()
+            plist.append(tmpp)
+
+    for p in plist:
+        p.join()
+        print ""
+        paraDicts.update(paraQueue.get())
+
+    for k,v in paraDicts.iteritems():
+        print ""
+        print k
+        print v
+        sr = v.split()
+        accu = float(sr[sr.index('total')+1])
+        if (accu>=maxDict.get("accu")):
+            maxDict["para"] = k
+            maxDict["accu"] = accu
+    #
+    print maxDict
+
+    # print len(paraDicts.keys())
+    # for k in paraDicts.keys():
+    #     print k
     # print ""
-    # print labelList
+    # for r in paras:
+    #     print r
 
-    cl = sorted(list(set(uy)))
-    cntD = dict()
-    for c in cl:
-        for yc in uy:
-            if c == yc: cntD[c] = cntD.get(c,0)+1
-
-    print cntD
-
+###=======================================================###
+    # labels = set(list(uy))
+    #
+    # labelList = list()
+    # plist = list()
+    # print ""
+    # print labels
+    # for yl in sorted(list(labels))[1:-1]:
+    #     tmpY = map(lambda r: r<=yl,list(uy))
+    #     labelList.append((yl,tmpY))
+    # # labelList.append((sorted(list(labels))[0],[x == sorted(list(labels))[0] for x in list(uy)]))
+    # # labelList.append((sorted(list(labels))[-1], [x == sorted(list(labels))[-1] for x in list(uy)]))
+    #
+    # # print ""
+    # # print labelList
+    #
+    # cl = sorted(list(set(uy)))
+    # cntD = dict()
+    # for c in cl:
+    #     for yc in uy:
+    #         if c == yc: cntD[c] = cntD.get(c,0)+1
+    #
+    # print cntD
+    #
     # paraQueue = Queue()
     # paraDicts = dict()
     #
@@ -314,7 +438,7 @@ if __name__ == "__main__":
     # for k,v in paraDicts.iteritems():
     #     print k
     #     print v
-
+    #
 
 #
 # ##<<=====================================================>>
@@ -335,18 +459,18 @@ if __name__ == "__main__":
 #             (yl, tmpY) = r
 #             if int(k) == int(yl):
 #                 modelDict[k] = myPredictReport(v, k, ux, tmpY)
+# # #
+#     savePKL("./tmpModelsNew.pkl",modelDict)
 # #
-#     savePKL("./tmpModels.pkl",modelDict)
-#
-#     tmpDict = readPKL("./tmpModels.pkl")
-#     for k,m in modelDict.iteritems():
-#         print ""
-#         print k
-#         print m
-#
-#     print tmpDict
-#     print modelDict
-#
+#     tmpDict = readPKL("./tmpModelsNew.pkl")
+# #     for k,m in modelDict.iteritems():
+# #         print ""
+# #         print k
+# #         print m
+# #
+# #     print tmpDict
+# #     print modelDict
+# #
 #     testMyOneVsRest(tmpDict,ux,uy)
 
     # ##<<======================================================>>

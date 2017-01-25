@@ -365,3 +365,14 @@ def lists2dicts(keys,lists):
 def getDataFrame(keys,lists):
     from pandas import DataFrame
     return DataFrame([keys]+lists,columns = keys)
+
+
+
+def save2CSV(dicts,filename):
+    import csv
+    keys,lists = dicts2lists(dicts)
+
+    with open(filename, 'wb') as fp:
+        csv_writer = csv.writer(fp, delimiter=',')
+        data = [keys] + lists
+        csv_writer.writerows(data)

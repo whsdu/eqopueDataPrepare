@@ -152,8 +152,59 @@ def excludeFailedRow(dicts,dimension):
 
     return (len(dictList), dictList)
 
+def normalizeByNameSets(dicts,nameLists):
+    from math import sqrt
+    keys, lists = dicts2lists(dicts)
+
+    def auxiComputeL2Normal(nlists,indexList):
+
+        for list in nlists:
+            l2acc = [0]*len(indexList)
+            for bi,indexs in enumerate(indexList):
+                for i in indexs:
+                    l2acc[bi] += float(list[i])**2
+
+            l2acc = map(lambda r: sqrt(r), l2acc)
+
+            for ai,indexs in enumerate(indexList):
+                for i in indexs:
+                    if(l2acc[ai]==0): list[i] = 1.0
+                    else:
+                        list[i] = float(list[i])/l2acc[ai]
+        return nlists
+
+    try:
+        indexList = [[keys.index(name) for name in names] for names in nameLists]
+    except Exception as e:
+        return (None,e)
+
+
+    try:
+        nlist = auxiComputeL2Normal(lists,indexList)
+    except Exception as e:
+        return (None,e)
+
+    ndicts = lists2dicts(keys,nlist)
+    return ndicts
+
+
 if __name__=="__main__":
-    boottreeMapping = getBoottreeMapping()
-    for d in boottreeMapping:
+    # boottreeMapping = getBoottreeMapping()
+    # for d in boottreeMapping:
+    #     print d
+
+    import collections
+
+    dict1 = collections.OrderedDict([('a','1'),  ('b','2'),  ('c',"stringC"),('d',5),('e',"string_E"),('f','10.3')])
+    dict2 = collections.OrderedDict([('a','2'),  ('b','4'),  ('c',"stringC"),('d',15),('e',"string_E"),('f',11.3)])
+    dict3 = collections.OrderedDict([('a','3'),  ('b','6'),  ('c',"stringC"),('d',25),('e',"string_E"),('f',12.3)])
+    dict4 = collections.OrderedDict([('a','4'),  ('b','7'),  ('c',"stringC"),('d',35),('e',"string_E"),('f',13.3)])
+    dict5 = collections.OrderedDict([('a','5'),  ('b','10'),  ('c',"stringC"),('d',45),('e',"string_E"),('f',14.3)])
+    dicts = [dict1,dict2,dict3,dict4,dict5]
+
+    namelist = [['a','b'],['d'],['f']]
+    for d in dicts:
         print d
 
+    for d in normalizeByNameSets(dicts,namelist):
+        print d

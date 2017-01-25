@@ -1,6 +1,7 @@
 testStatementOne = """
     select * from
     dlo_3dscan
+    limit 100
 """
 
 sizeList = [250,245,240,235,230,225,220]
@@ -52,6 +53,11 @@ def fakeAuxi(keys,sortResutl):
         rlist.append(keys[i])
 
     return rlist
+
+# def testRedis():
+#     import redis
+#     key = "some"
+#     data = redis.brpop(key)
 
 ##no tail recursive .... fucking python
 # def auxi(keys,rlist,flag,vList):

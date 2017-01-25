@@ -140,30 +140,30 @@ if __name__ == "__main__":
     dbname = "t_dlodb"
     dicts = sqlQuery(queryStatement,hostname,dbname)
 
-    fixDicts = getDBuserscaninfo(queryStatement, hostname, dbname)
-    print fixDicts[0].values()[4:]
-    print len(fixDicts[0].values()[4:])
-
-    print " "
-    dbconnection,dbCur = testConnection(hostname,dbname)
-    print dbconnection
-    print dbCur
-
-    hostlist = [hostname,"unknowhost"]
-    dblist = [dbname,"unknowndb"]
-
-    testTuple = [(h,d) for h in hostlist for d in dblist]
-
-
-    for t in testTuple:
-        h,d = t
-        dbconnection, dbCur = testConnection(h, d)
-        print ""
-        print "start testing testConnection function: host: " + str(h) + " dbname: " + str(d)
-        print dbconnection
-        print dbCur
-
-
+    # fixDicts = getDBuserscaninfo(queryStatement, hostname, dbname)
+    # print fixDicts[0].values()[4:]
+    # print len(fixDicts[0].values()[4:])
+    #
+    # print " "
+    # dbconnection,dbCur = testConnection(hostname,dbname)
+    # print dbconnection
+    # print dbCur
+    #
+    # hostlist = [hostname,"unknowhost"]
+    # dblist = [dbname,"unknowndb"]
+    #
+    # testTuple = [(h,d) for h in hostlist for d in dblist]
+    #
+    #
+    # for t in testTuple:
+    #     h,d = t
+    #     dbconnection, dbCur = testConnection(h, d)
+    #     print ""
+    #     print "start testing testConnection function: host: " + str(h) + " dbname: " + str(d)
+    #     print dbconnection
+    #     print dbCur
+    #
+    #
     # errorjson,dimensionDict = dictsExamer(dicts,"customer_info")
     #
     # if errorjson is not None:
@@ -173,13 +173,15 @@ if __name__ == "__main__":
     #     print k
     #     print v
     #     print ""
-    #
-    # mejson,mdimensionDict = dictsExamer(dicts,"measurement_items")
-    #
-    # print "mejson: " + str(mejson)
-    # print "mdimensionDict: "
-    # print mdimensionDict
-    # print ""
+
+    mejson,mdimensionDict = dictsExamer(dicts,"measurement_items")
+
+    print "mejson: " + str(mejson)
+    print "mdimensionDict: "
+    for k,v in mdimensionDict.iteritems():
+        print k
+        print v
+        print ""
     #
     # if mejson is not None and 49 in mdimensionDict.keys() and set(mdimensionDict.get(49)).issubset(set(mdimensionDict.get(68))):
     #     nndicts = str2dicts(ndicts,"measurement_items")
