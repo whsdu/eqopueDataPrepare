@@ -96,55 +96,66 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
     boottreeAveList = groupbyDict(boottreeDictLists, lambda r: [r[list(boottreeDictLists[0].keys()).index("styleid")]],
                                   boottreeAve)
     boottreeDictAve = lists2dicts(["styleid"] + boottreeDictLists[0].keys()[2:], boottreeAveList)
-    # print boottreeDictAve[0]
-    # print boottreeDictAve[0].keys()
-    # print len(boottreeDictAve[0].keys())
+    logger.debug("Get average boottree to represent a unique style. The result is: ")
+    logger.debug(boottreeDictAve[0])
+    logger.debug(len(boottreeDictAve[0].keys()))
+    logger.debug(boottreeDictAve[0].keys())
     #
-    jcnt4, userinfoScanBoottree = dataJoin(suitUserScanInfo, boottreeDictLists, joinKeyList=['styleid', 'size'],
-                                           how='inner')
-
+    # jcnt4, userinfoScanBoottree = dataJoin(suitUserScanInfo, boottreeDictLists, joinKeyList=['styleid', 'size'],
+    #                                        how='inner')
     # print ""
     # print jcnt4
     # print userinfoScanBoottree[0]
 
     jcnt5, userinfoScanBoottreeAve = dataJoin(suitUserScanInfo, boottreeDictAve, joinKeyList=['styleid'], how='inner')
-    # print ""
-    # print jcnt5
-    # print userinfoScanBoottreeAve[0]
-    # print len(userinfoScanBoottreeAve[0].keys())
+    logger.debug("Get the training dataset: ")
+    logger.debug(jcnt5)
+    logger.debug(len(userinfoScanBoottreeAve[0].keys()))
+    logger.debug(userinfoScanBoottreeAve[0])
 
     rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x","size_y"])
-    # print rX[0]
-    keys, lists = dicts2lists(rX)
-
-    nrX = normalizeByNameSets(rX,[
-        ['height','weight','usualsize'],
-        [k for i, k in enumerate(keys) if (i >= keys.index("foot_length_original_left") and i <= keys.index("below_knee_girth_right"))],
-        ["bathickness","bbthickness"],
-        [k for i, k in enumerate(keys) if (i >= keys.index("d1") and i <= keys.index("d19"))],
-    ])
-
     print rX[0]
-    print rX[1]
-    print ""
-    print nrX[0]
-    print nrX[1]
-
-    nkeys, nlists = dicts2lists(nrX)
-    ndata_set = np.asarray(nlists)
-    nX = ndata_set[:,2:]
-    ny = ndata_set[:,1]
-
+    keys, lists = dicts2lists(rX)
     print keys
-    data_set = np.asarray(lists)
-    X = data_set[:, 2:]
-    y = data_set[:, 1]
+    normalizedX,hehey = normalizeByAxisZero(lists)
+    print normalizedX[0]
+    print hehey
+    print len(normalizedX[0])
+    return (normalizedX,hehey)
 
-    print rX[0].keys()
-    print data_set[0]
-    # print X[0]
-    # print y[0]
-    return [(X,y),(nX,ny),rX,nrX]
+    #
+    # nrX = normalizeByNameSets(rX,[
+    #     ['height','weight','usualsize'],
+    #     [k for i, k in enumerate(keys) if (i >= keys.index("foot_length_original_left") and i <= keys.index("below_knee_girth_right"))],
+    #     ["bathickness","bbthickness"],
+    #     [k for i, k in enumerate(keys) if (i >= keys.index("d1") and i <= keys.index("d19"))],
+    # ])
+    #
+    # print rX[0]
+    # print rX[1]
+    # print len(rX[1])
+    # print ""
+    # print nrX[0]
+    # print nrX[1]
+    # print len(nrX[1])
+    #
+    # nkeys, nlists = dicts2lists(nrX)
+    # ndata_set = np.asarray(nlists)
+    # nX = ndata_set[:,2:]
+    # ny = ndata_set[:,1]
+    #
+    # print keys
+    # print len(nX[1])
+    # data_set = np.asarray(lists)
+    # X = data_set[:, 2:]
+    # y = data_set[:, 1]
+    #
+    # print rX[0].keys()
+    # print data_set[0]
+    # print len(X[1])
+    # # print X[0]
+    # # print y[0]
+    # return [(X,y),(nX,ny),rX,nrX]
 
 def myCrossValidTest(x, y, num_folds,spaceFlat):
     from svmdataloader import svm_tuned_auroc
@@ -358,13 +369,13 @@ if __name__ == "__main__":
     key = "belle"
     suffix = "11_1"
 
-    [(X,y),(nX,ny),rX,nrX] = getDataSet(key,rootdir,fileNamingPolicyTwo,suffix)
-
+    # [(X,y),(nX,ny),rX,nrX] = getDataSet(key,rootdir,fileNamingPolicyTwo,suffix)
+    nX,ny = getDataSet(key, rootdir, fileNamingPolicyTwo, suffix)
     # save2CSV(rX,"noNormalized.csv")
     # save2CSV(nrX,"nomrliazed.csv")
 
-    X_normalized = preprocessing.normalize(X, norm='l2')
-    print X_normalized[0]
+    # X_normalized = preprocessing.normalize(X, norm='l2')
+    # print X_normalized[0]
 
     # ux = X_normalized
     # uy = y

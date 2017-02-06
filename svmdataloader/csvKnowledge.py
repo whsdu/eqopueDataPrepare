@@ -191,6 +191,26 @@ def normalizeByNameSets(dicts,nameLists):
     ndicts = lists2dicts(keys,nlist)
     return ndicts
 
+def normalizeByAxisZero(Lists):
+    import numpy as np
+    X,y = list2nlist(Lists)
+
+    nMin = X.min(axis = 0)
+    gap = X.max(axis = 0) - nMin
+    normalizedX = 1.0*(X-nMin)/gap
+
+    normalizedX[np.isnan(normalizedX)] = 0
+
+    return (normalizedX,y)
+
+def list2nlist(lists):
+    import numpy as np
+
+    data_set = np.asarray(lists)
+    X = data_set[:, 2:]
+    y = data_set[:, 1]
+
+    return (X,y)
 
 if __name__=="__main__":
     # boottreeMapping = getBoottreeMapping()
