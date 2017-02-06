@@ -289,7 +289,7 @@ def getRBFparas(logGammaStep = 1, logGammaRange = [-5,0],CStep = 100,CRange = [1
 
     return [[C,l] for l in logGammaList for C in Clist]
 
-def simpleSVC(X,y,paras,paraQue):
+def simpleSVC(X,y,paras,paraQue=None):
     from sklearn.cross_validation import train_test_split
     from sklearn.svm import SVC
     from sklearn.metrics import classification_report
@@ -314,9 +314,10 @@ def simpleSVC(X,y,paras,paraQue):
         with open('Model/' + modelName, 'wb') as f:
             pickle.dump(model, f)
 
-    paraQue.put({key: report})
+    if paraQue is not None:
+        paraQue.put({key: report})
 
-    return report
+    return {key: report}
 
 def seqList(initlist,inputlist,seq):
     if seq>=len(inputlist):
@@ -366,19 +367,24 @@ if __name__ == "__main__":
 
     for subParas in listSequments:
         for para in subParas:
-            tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
-            tmpp.start()
+            # tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
+            # tmpp.start()
+            tmpp = simpleSVC(ux,uy,para,)
             plist.append(tmpp)
 
+            for k,v in tmpp.iteritems():
+                print""
+                print k
+                print v
+    # for p in plist:
+    #     p.join()
+    #     print ""
+    #     paraDicts.update(paraQueue.get())
+
     for p in plist:
-        p.join()
-        print ""
-        paraDicts.update(paraQueue.get())
+        paraDicts.update(p)
 
     for k,v in paraDicts.iteritems():
-        print ""
-        print k
-        print v
         sr = v.split()
         accu = float(sr[sr.index('total')+1])
         if (accu>=maxDict.get("accu")):
