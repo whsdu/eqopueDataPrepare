@@ -1,4 +1,5 @@
 from dbloader import *
+import logging
 
 def sqlQuery(statement,hostname,dbname,lazySize = 1000):
     import collections
@@ -43,14 +44,17 @@ def dictsExamer(dicts,dimension):
 
     return (errorJSON,dimensionDict)
 
+
 def excludeFailedRow(dicts,dimension):
     import collections
-
+    logger = logging.getLogger("main.dbconnector.excludeFailedRow")
     dictList = list()
     for d in dicts:
         scanStr = d.get(dimension, None)
 
-        if scanStr is None: return (None, "Dimension name does not exist!")
+        if scanStr is None:
+            logger.error("Dimension name does not exist!")
+            return (None, "Dimension name does not exist!")
 
         decoder = json.JSONDecoder(object_pairs_hook=collections.OrderedDict)
         if "nan" in scanStr: continue

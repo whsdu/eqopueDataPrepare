@@ -1,6 +1,10 @@
 from svmdataloader import *
 from dbloader import *
 
+
+"""
+    knowledge about what will be included in the CSV folders.
+"""
 def getManifold(key,rootdir,namingPolicy,suffix):
     fileCnt, fileList = readFilePathList(key,rootdir,namingPolicy,suffix)
 

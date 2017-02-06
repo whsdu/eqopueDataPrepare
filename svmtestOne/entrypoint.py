@@ -4,14 +4,19 @@ import numpy as np
 import sys
 from sklearn import preprocessing
 from multiprocessing import Process,Queue
+import logging
 
 def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
+    import logging
+    logger = logging.getLogger("main.getDataSet")
+
     import sys
     import numpy as np
+
     cnt, dictLists = getManifold(key, rootdir, fileNamingPolicyTwo, suffix)
 
     if cnt is None:
-        # logging goes here with the dictList carry error information
+        logger.debug(dictLists)
         sys.exit(0)
 
     suitsizeDictLists, scanDictLists, userInfoDictLists, answerDictLists, boottreeDictLists = dictLists
@@ -22,9 +27,10 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
     dJoint1r = removeDimensionsOrdered(dJoint1, ['fcode'])
     ntd = groupbyDict(dJoint1r, lambda x: [x[list(dJoint1r[0].keys()).index("userid")]], scan3dDatetime)
     userinfoscan = lists2dicts(['userid', 'sex', 'height', 'weight', 'usualsize', 'scandata'], ntd)
+    logger.debug("Join userinfor(hight,weight,age) with 3Dscan data")
+    logger.debug(ntd[0])
+    logger.debug(userinfoscan[0])
 
-    # print ntd[0]
-    # print userinfoscan[0]
     # mejson, mdimensionDict = dictsExamer(userinfoscan,'scandata')
     # print "mejson: " + str(mejson)
     # print "mdimensionDict: "
@@ -33,11 +39,11 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
 
     ### Clean failed scandata ( Such as unfinished JSON object )
     fejson, userinfoscanFiltered = excludeFailedRow(userinfoscan, 'scandata')
-    # print "fejson: " + str(fejson)
-    # print len(userinfoscan)
-    # print "fdimensionDict: "
-    # print userinfoscanFiltered[0].keys()
-    # print ""
+    logger.debug("remove incomplete json")
+    logger.debug("fejson: " + str(fejson))
+    logger.debug(len(userinfoscan))
+    logger.debug("fdimensionDict: ")
+    logger.debug(userinfoscanFiltered[0].keys())
 
     userinfoscan = userinfoscanFiltered
 
@@ -48,46 +54,43 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
         userinfoscan[0].keys()[:(userinfoscan[0].keys().index("usualsize") + 1)] + ["side"] + scanDimensionNames,
         splitLR
     )
-    # print ""
-    # print userinfoScanLR[0]
-    # print userinfoScanLR[1]
+    logger.debug("parse the json part, the result is: ")
+    logger.debug(userinfoScanLR[0])
+    logger.debug(userinfoScanLR[1])
 
     ### Extract scanData, concatenate left and right.
     split = rowSplit(userinfoscan, 'scandata', extractScanData)
     scanDimensionNamesSides = getScanDimensionNameSides(userinfoscan[0].get("scandata"))
     userinfoScan = lists2dicts(userinfoscan[0].keys()[:5] + scanDimensionNamesSides, split)
-    # print ""
-    # print userinfoScan[0]
-    # print userinfoScan[1]
+    logger.debug("parse the json part and concatenate left and rith, the result is: ")
+    logger.debug(userinfoScan[0])
+    logger.debug(userinfoScan[1])
 
     ### Get the mapping relation between shoes' itemID and styleid.
     ### Merge the fitSize record with shoes' Info
     boottreeMapping = getBoottreeMapping()
     jcnt2, suitSizeDicts = dataJoin(suitsizeDictLists, boottreeMapping, left_on=['itemid'], right_on=['itemid'],
                                     how='inner')
-
-    # print ""
-    # print jcnt2
-    # print suitSizeDicts[0]
-    # #
+    logger.debug("Combine suitsize information with the shoes' style and id mapping relations. The result is : ")
+    logger.debug(jcnt2)
+    logger.debug(suitSizeDicts[0])
 
     ### Merge suitsize, userinfo with shoes infor ==> Userinfo, suitsize, User3DScan, shoesID, shoesStyleid
     jcnt3, suitUserScanInfo = dataJoin(suitSizeDicts, userinfoScan, left_on=['userid'], right_on=['userid'],
                                        how='inner')
-    # print ""
-    # print jcnt3
-    # print suitUserScanInfo[0]
-
+    logger.debug("Contain 'Userinfo', 'suitsize', 'User3DScan', 'shoesID', 'shoesStyleid'. The result is : ")
+    logger.debug(jcnt3)
+    logger.debug(suitUserScanInfo[0])
 
     ### Clearn Boottree infor
     filter(lambda d: len(d.get("styleid", "W")) >= 5, boottreeDictLists)
     map(replaceV, boottreeDictLists)
     str2num(boottreeDictLists, ["styleid", "boottreeid", ])
     str2num(suitUserScanInfo, ['userid', 'styleid', ])
-    #
-    # print ""
-    # print boottreeDictLists[0]
-    # print suitUserScanInfo[0]
+
+    logger.debug("Convert string to Num of boottree and userscan info. The result is: ")
+    logger.debug(boottreeDictLists[0])
+    logger.debug(suitUserScanInfo[0])
 
     ### Generate boottreeinfor for a given Shooe style  
     boottreeAveList = groupbyDict(boottreeDictLists, lambda r: [r[list(boottreeDictLists[0].keys()).index("styleid")]],
@@ -297,7 +300,9 @@ def simpleSVC(X,y,paras,paraQue=None):
 
     C,logGamma = paras
 
-    X_normalized = preprocessing.normalize(X, norm='l2')
+    # X_normalized = preprocessing.normalize(X, norm='l2')
+    X_normalized = X
+
     X_train, X_test, y_train, y_test = train_test_split(X_normalized, y, test_size=0.20)
 
     model = SVC(kernel='rbf', C=C, gamma=10 ** logGamma)
@@ -336,6 +341,18 @@ def seqList(initlist,inputlist,seq):
 #             yield row
 
 if __name__ == "__main__":
+    logger = logging.getLogger("main")
+
+    # logger.setLevel(logging.INFO)
+    logger.setLevel(logging.DEBUG)
+
+    loggerFH = logging.FileHandler("svmtestlog.log")
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    loggerFH.setFormatter(formatter)
+
+    logger.addHandler(loggerFH)
+    logger.info("<----------------------------------- svmtestOne start ----------------------------------->")
+
     rootdir = getCSVroot()
     # belleJSON = getCSVjsonPath()
     key = "belle"
@@ -365,40 +382,49 @@ if __name__ == "__main__":
     listSequments = seqList(tmplist, paras, 5)
     maxDict = {"para": "initial", "accu": 0}
 
-    for subParas in listSequments:
-        for para in subParas:
-            # tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
-            # tmpp.start()
-            tmpp = simpleSVC(ux,uy,para,)
-            plist.append(tmpp)
+###<<============================single para ==============================>>>>
+    tmpreport = simpleSVC(ux,uy,(1000,-1),)
+    for k, v in tmpreport.iteritems():
+        print k
+        print v
+###<<==========================================================>>>>
 
-            for k,v in tmpp.iteritems():
-                print""
-                print k
-                print v
-    # for p in plist:
-    #     p.join()
-    #     print ""
-    #     paraDicts.update(paraQueue.get())
 
-    for p in plist:
-        paraDicts.update(p)
-
-    for k,v in paraDicts.iteritems():
-        sr = v.split()
-        accu = float(sr[sr.index('total')+1])
-        if (accu>=maxDict.get("accu")):
-            maxDict["para"] = k
-            maxDict["accu"] = accu
+    # for subParas in listSequments:
+    #     for para in subParas:
+    #         # tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
+    #         # tmpp.start()
+    #         tmpp = simpleSVC(ux,uy,para,)
+    #         plist.append(tmpp)
     #
-    print maxDict
-
-    # print len(paraDicts.keys())
-    # for k in paraDicts.keys():
-    #     print k
-    # print ""
-    # for r in paras:
-    #     print r
+    #         for k,v in tmpp.iteritems():
+    #             print""
+    #             print k
+    #             print v
+    #
+    # # for p in plist:
+    # #     p.join()
+    # #     print ""
+    # #     paraDicts.update(paraQueue.get())
+    #
+    # for p in plist:
+    #     paraDicts.update(p)
+    #
+    # for k,v in paraDicts.iteritems():
+    #     sr = v.split()
+    #     accu = float(sr[sr.index('total')+1])
+    #     if (accu>=maxDict.get("accu")):
+    #         maxDict["para"] = k
+    #         maxDict["accu"] = accu
+    # #
+    # print maxDict
+    #
+    # # print len(paraDicts.keys())
+    # # for k in paraDicts.keys():
+    # #     print k
+    # # print ""
+    # # for r in paras:
+    # #     print r
 
 ###=======================================================###
     # labels = set(list(uy))
@@ -541,3 +567,5 @@ if __name__ == "__main__":
     # for d in suitUserScanInfo:
     #     if d.get("userid") == "F0049375462":
     #         print d
+
+    logger.info("<<---------------------------------- svmtestOne Done ------------------------------------>")

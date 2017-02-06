@@ -161,10 +161,10 @@ def readcsvFileOrdered(filepath,filterList):
 def dataJoin(leftCSVDicts,rightCSVDicts,joinKeyList=None,left_on = None,right_on= None,fnan = 0,how = 'left'):
     from pandas import merge
     if any(len(dictList) == 0 for dictList in [leftCSVDicts,rightCSVDicts]):
-        return (None, "Please do not use empty dataSet")
+        return (None, "Please do not use empty dataSet [from: dataJoin]")
 
     if all(joinSet is None for joinSet in[joinKeyList,left_on,right_on]):
-        return (None, "Please provide information about join keys!")
+        return (None, "Please provide information about join keys! [from: dataJoin] ")
 
     leftKeys,leftlists = dicts2lists(leftCSVDicts)
     rightKeys,rightlists = dicts2lists(rightCSVDicts)
@@ -175,7 +175,7 @@ def dataJoin(leftCSVDicts,rightCSVDicts,joinKeyList=None,left_on = None,right_on
     if joinKeyList is not None \
             and \
             not all(set(joinKeyList).issubset(set(dataFrame.keys())) for dataFrame in [leftframe,rightframe]):
-        return (None,"At least one dataset doesn't contain one of these common join keys!" )
+        return (None,"At least one dataset doesn't contain one of these common join keys! [from: dataJoin]" )
 
     if joinKeyList is not None:
         leftjoin = merge(leftframe, rightframe, how=how, on=joinKeyList)
@@ -192,7 +192,7 @@ def dataJoin(leftCSVDicts,rightCSVDicts,joinKeyList=None,left_on = None,right_on
                                 set(right_on).issubset(set(rightframe.keys()))
                             ]
                         ):
-        return (None, "At leaset one joint key is not match!!")
+        return (None, "At leaset one joint key is not match!! [from: dataJoin]")
 
     if any(joinOn is None for joinOn in [left_on,right_on]):
         left_on = joinKeyList
