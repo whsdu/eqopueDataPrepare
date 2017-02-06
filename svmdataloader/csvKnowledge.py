@@ -212,6 +212,158 @@ def list2nlist(lists):
 
     return (X,y)
 
+
+def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
+    import logging
+    logger = logging.getLogger("main.getDataSet")
+
+    import sys
+    import numpy as np
+
+    cnt, dictLists = getManifold(key, rootdir, fileNamingPolicyTwo, suffix)
+
+    if cnt is None:
+        logger.debug(dictLists)
+        sys.exit(0)
+
+    suitsizeDictLists, scanDictLists, userInfoDictLists, answerDictLists, boottreeDictLists = dictLists
+
+    ### Merge Userinfor and scan3D infor
+    jcnt, dJoint1 = dataJoin(userInfoDictLists, scanDictLists, left_on=['userid'], right_on=['fcode'], how='inner')
+    if jcnt is None: return (jcnt,dJoint1)
+    dJoint1r = removeDimensionsOrdered(dJoint1, ['fcode'])
+    ntd = groupbyDict(dJoint1r, lambda x: [x[list(dJoint1r[0].keys()).index("userid")]], scan3dDatetime)
+    userinfoscan = lists2dicts(['userid', 'sex', 'height', 'weight', 'usualsize', 'scandata'], ntd)
+    logger.debug("Join userinfor(hight,weight,age) with 3Dscan data")
+    logger.debug(ntd[0])
+    logger.debug(userinfoscan[0])
+
+    # mejson, mdimensionDict = dictsExamer(userinfoscan,'scandata')
+    # print "mejson: " + str(mejson)
+    # print "mdimensionDict: "
+    # print mdimensionDict.keys()
+    # print ""
+
+    ### Clean failed scandata ( Such as unfinished JSON object )
+    fejson, userinfoscanFiltered = excludeFailedRow(userinfoscan, 'scandata')
+    logger.debug("remove incomplete json")
+    logger.debug("fejson: " + str(fejson))
+    logger.debug(len(userinfoscan))
+    logger.debug("fdimensionDict: ")
+    logger.debug(userinfoscanFiltered[0].keys())
+
+    userinfoscan = userinfoscanFiltered
+
+    ### Extract scanData by foot position (Left and Right)
+    splitLR = rowSplit(userinfoscan, 'scandata', extractScanDataLR)
+    scanDimensionNames = getScanDimensionName(userinfoscan[0].get("scandata"))
+    userinfoScanLR = lists2dicts(
+        userinfoscan[0].keys()[:(userinfoscan[0].keys().index("usualsize") + 1)] + ["side"] + scanDimensionNames,
+        splitLR
+    )
+    logger.debug("parse the json part, the result is: ")
+    logger.debug(userinfoScanLR[0])
+    logger.debug(userinfoScanLR[1])
+
+    ### Extract scanData, concatenate left and right.
+    split = rowSplit(userinfoscan, 'scandata', extractScanData)
+    scanDimensionNamesSides = getScanDimensionNameSides(userinfoscan[0].get("scandata"))
+    userinfoScan = lists2dicts(userinfoscan[0].keys()[:5] + scanDimensionNamesSides, split)
+    logger.debug("parse the json part and concatenate left and rith, the result is: ")
+    logger.debug(userinfoScan[0])
+    logger.debug(userinfoScan[1])
+
+    ### Get the mapping relation between shoes' itemID and styleid.
+    ### Merge the fitSize record with shoes' Info
+    boottreeMapping = getBoottreeMapping()
+    jcnt2, suitSizeDicts = dataJoin(suitsizeDictLists, boottreeMapping, left_on=['itemid'], right_on=['itemid'],
+                                    how='inner')
+    logger.debug("Combine suitsize information with the shoes' style and id mapping relations. The result is : ")
+    logger.debug(jcnt2)
+    logger.debug(suitSizeDicts[0])
+
+    ### Merge suitsize, userinfo with shoes infor ==> Userinfo, suitsize, User3DScan, shoesID, shoesStyleid
+    jcnt3, suitUserScanInfo = dataJoin(suitSizeDicts, userinfoScan, left_on=['userid'], right_on=['userid'],
+                                       how='inner')
+    logger.debug("Contain 'Userinfo', 'suitsize', 'User3DScan', 'shoesID', 'shoesStyleid'. The result is : ")
+    logger.debug(jcnt3)
+    logger.debug(suitUserScanInfo[0])
+
+    ### Clearn Boottree infor
+    filter(lambda d: len(d.get("styleid", "W")) >= 5, boottreeDictLists)
+    map(replaceV, boottreeDictLists)
+    str2num(boottreeDictLists, ["styleid", "boottreeid", ])
+    str2num(suitUserScanInfo, ['userid', 'styleid', ])
+
+    logger.debug("Convert string to Num of boottree and userscan info. The result is: ")
+    logger.debug(boottreeDictLists[0])
+    logger.debug(suitUserScanInfo[0])
+
+    ### Generate boottreeinfor for a given Shooe style
+    boottreeAveList = groupbyDict(boottreeDictLists, lambda r: [r[list(boottreeDictLists[0].keys()).index("styleid")]],
+                                  boottreeAve)
+    boottreeDictAve = lists2dicts(["styleid"] + boottreeDictLists[0].keys()[2:], boottreeAveList)
+    logger.debug("Get average boottree to represent a unique style. The result is: ")
+    logger.debug(boottreeDictAve[0])
+    logger.debug(len(boottreeDictAve[0].keys()))
+    logger.debug(boottreeDictAve[0].keys())
+    #
+    # jcnt4, userinfoScanBoottree = dataJoin(suitUserScanInfo, boottreeDictLists, joinKeyList=['styleid', 'size'],
+    #                                        how='inner')
+    # print ""
+    # print jcnt4
+    # print userinfoScanBoottree[0]
+
+    jcnt5, userinfoScanBoottreeAve = dataJoin(suitUserScanInfo, boottreeDictAve, joinKeyList=['styleid'], how='inner')
+    logger.debug("Get the training dataset: ")
+    logger.debug(jcnt5)
+    logger.debug(len(userinfoScanBoottreeAve[0].keys()))
+    logger.debug(userinfoScanBoottreeAve[0])
+
+    rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x","size_y"])
+    print rX[0]
+    keys, lists = dicts2lists(rX)
+    print keys
+    normalizedX,hehey = normalizeByAxisZero(lists)
+    print normalizedX[0]
+    print hehey
+    print len(normalizedX[0])
+    return (normalizedX,hehey)
+
+    #
+    # nrX = normalizeByNameSets(rX,[
+    #     ['height','weight','usualsize'],
+    #     [k for i, k in enumerate(keys) if (i >= keys.index("foot_length_original_left") and i <= keys.index("below_knee_girth_right"))],
+    #     ["bathickness","bbthickness"],
+    #     [k for i, k in enumerate(keys) if (i >= keys.index("d1") and i <= keys.index("d19"))],
+    # ])
+    #
+    # print rX[0]
+    # print rX[1]
+    # print len(rX[1])
+    # print ""
+    # print nrX[0]
+    # print nrX[1]
+    # print len(nrX[1])
+    #
+    # nkeys, nlists = dicts2lists(nrX)
+    # ndata_set = np.asarray(nlists)
+    # nX = ndata_set[:,2:]
+    # ny = ndata_set[:,1]
+    #
+    # print keys
+    # print len(nX[1])
+    # data_set = np.asarray(lists)
+    # X = data_set[:, 2:]
+    # y = data_set[:, 1]
+    #
+    # print rX[0].keys()
+    # print data_set[0]
+    # print len(X[1])
+    # # print X[0]
+    # # print y[0]
+    # return [(X,y),(nX,ny),rX,nrX]
+
 if __name__=="__main__":
     # boottreeMapping = getBoottreeMapping()
     # for d in boottreeMapping:
