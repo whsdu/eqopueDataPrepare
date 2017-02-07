@@ -1,4 +1,5 @@
 
+
 def simpleSVC(X,y,paras,paraQue=None):
     from sklearn.cross_validation import train_test_split
     from sklearn.svm import SVC
@@ -44,6 +45,14 @@ def getRBFparas(logGammaStep = 1, logGammaRange = [-5,0],CStep = 100,CRange = [1
 
     return [[C,l] for l in logGammaList for C in Clist]
 
+"""
+    >>> tl = range(0,10)
+    >>> tl
+    [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> sql = seqList([],tl,3)
+    >>> sql
+    [[0, 1, 2], [3, 4, 5], [6, 7, 8], [9]]
+"""
 def seqList(initlist,inputlist,seq):
     if seq>=len(inputlist):
         initlist.append(inputlist)
@@ -51,3 +60,25 @@ def seqList(initlist,inputlist,seq):
     if seq<len(inputlist):
         initlist.append(inputlist[0:seq])
         return seqList(initlist,inputlist[seq:],seq)
+
+
+def normalizeByAxisZero(Lists):
+    import numpy as np
+    X,y = list2nlist(Lists)
+
+    nMin = X.min(axis = 0)
+    gap = X.max(axis = 0) - nMin
+    normalizedX = 1.0*(X-nMin)/gap
+
+    normalizedX[np.isnan(normalizedX)] = 0
+
+    return (normalizedX,y)
+
+def list2nlist(lists):
+    import numpy as np
+
+    data_set = np.asarray(lists)
+    X = data_set[:, 2:]
+    y = data_set[:, 1]
+
+    return (X,y)

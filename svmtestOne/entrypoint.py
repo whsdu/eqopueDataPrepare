@@ -251,41 +251,41 @@ if __name__ == "__main__":
 ###<<==========================================================>>>>
 
 
-    # for subParas in listSequments:
-    #     for para in subParas:
-    #         # tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
-    #         # tmpp.start()
-    #         tmpp = simpleSVC(ux,uy,para,)
-    #         plist.append(tmpp)
-    #
-    #         for k,v in tmpp.iteritems():
-    #             print""
-    #             print k
-    #             print v
-    #
-    # # for p in plist:
-    # #     p.join()
-    # #     print ""
-    # #     paraDicts.update(paraQueue.get())
-    #
+    for subParas in listSequments:
+        for para in subParas:
+            # tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
+            # tmpp.start()
+            tmpp = simpleSVC(ux,uy,para,)
+            plist.append(tmpp)
+
+            for k,v in tmpp.iteritems():
+                print""
+                print k
+                print v
+
     # for p in plist:
-    #     paraDicts.update(p)
+    #     p.join()
+    #     print ""
+    #     paraDicts.update(paraQueue.get())
+
+    for p in plist:
+        paraDicts.update(p)
+
+    for k,v in paraDicts.iteritems():
+        sr = v.split()
+        accu = float(sr[sr.index('total')+1])
+        if (accu>=maxDict.get("accu")):
+            maxDict["para"] = k
+            maxDict["accu"] = accu
     #
-    # for k,v in paraDicts.iteritems():
-    #     sr = v.split()
-    #     accu = float(sr[sr.index('total')+1])
-    #     if (accu>=maxDict.get("accu")):
-    #         maxDict["para"] = k
-    #         maxDict["accu"] = accu
-    # #
-    # print maxDict
-    #
-    # # print len(paraDicts.keys())
-    # # for k in paraDicts.keys():
-    # #     print k
-    # # print ""
-    # # for r in paras:
-    # #     print r
+    print maxDict
+
+    # print len(paraDicts.keys())
+    # for k in paraDicts.keys():
+    #     print k
+    # print ""
+    # for r in paras:
+    #     print r
 
 ###=======================================================###
     # labels = set(list(uy))
