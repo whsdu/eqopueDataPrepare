@@ -1,4 +1,4 @@
-from svmdataloader import *
+
 from dbloader import *
 
 
@@ -201,7 +201,7 @@ def normalizeByAxisZero(Lists):
 
     normalizedX[np.isnan(normalizedX)] = 0
 
-    return (normalizedX,y)
+    return (normalizedX,y,gap,nMin)
 
 def list2nlist(lists):
     import numpy as np
@@ -324,11 +324,11 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
     print rX[0]
     keys, lists = dicts2lists(rX)
     print keys
-    normalizedX,hehey = normalizeByAxisZero(lists)
+    normalizedX,hehey,gap,nMin = normalizeByAxisZero(lists)
     print normalizedX[0]
     print hehey
     print len(normalizedX[0])
-    return (normalizedX,hehey)
+    return (normalizedX,hehey,gap,nMin)
 
     #
     # nrX = normalizeByNameSets(rX,[

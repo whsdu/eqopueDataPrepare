@@ -1,10 +1,15 @@
+def savePKL(filepath,object):
+    import pickle
 
+    with open(filepath,'wb') as f:
+        pickle.dump(object,f)
 
-def simpleSVC(X,y,paras,paraQue=None):
+    f.close()
+
+def simpleSVC(X,y,paras,suffix = None,paraQue=None):
     from sklearn.cross_validation import train_test_split
     from sklearn.svm import SVC
     from sklearn.metrics import classification_report
-    import pickle
 
     C,logGamma = paras
 
@@ -23,10 +28,10 @@ def simpleSVC(X,y,paras,paraQue=None):
     sr = report.split()
     accu = float(sr[sr.index('total') + 1])
     if accu >= 0.75:
-        modelName = key + '.pkl'
-        with open('Model/' + modelName, 'wb') as f:
-            pickle.dump(model, f)
-
+        modelName = suffix+" "+key + '.pkl'
+        # with open('Model/' + modelName, 'wb') as f:
+        #     pickle.dump(model, f)
+        savePKL('Model/' + modelName,model)
     if paraQue is not None:
         paraQue.put({key: report})
 
@@ -82,3 +87,25 @@ def list2nlist(lists):
     y = data_set[:, 1]
 
     return (X,y)
+
+def singleInputNormalization(input,gap,nMin):
+    import numpy as np
+
+    normalizedX = 1.0 * (input - nMin) / gap
+
+    normalizedX[np.isnan(normalizedX)] = 0
+
+    return normalizedX
+
+if __name__ == "__main__":
+    import pickle
+
+    with open('/home/wh/PycharmProjects/eqopueDataProcess/svmtestOne/Model/normalizationSet.pkl', "rb") as input:
+        gap,nMin = pickle.load(input)
+    input.close()
+
+    print gap
+    print gap.shape
+    print len(gap)
+    print nMin
+    print len(nMin)
