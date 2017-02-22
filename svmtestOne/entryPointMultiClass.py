@@ -1,6 +1,8 @@
 
 from preprocess import *
 from multiprocessing import Process,Queue
+from centralizedInfo import *
+from svmdataloader import *
 import logging
 
 
@@ -20,9 +22,10 @@ if __name__ == "__main__":
     rootdir = getCSVroot()
     key = "belle"
     suffix = "11_1"
-    nX,ny,gap,nMin = getDataSet(key, rootdir, fileNamingPolicyTwo, suffix)
+    nX,ny,gap,nMin = getDataSetCSV(key, rootdir, fileNamingPolicyTwo, suffix)
 
-    savePKL('Model/normalizationSet.pkl',(gap,nMin))
+    normalizationSetName = suffix+"_"+"normalizationSet.pkl"
+    savePKL('Model/'+normalizationSetName,(gap,nMin))
     ux = nX
     uy = ny
 
@@ -37,9 +40,13 @@ if __name__ == "__main__":
     maxDict = {"para": "initial", "accu": 0}
 
     tmpreport = simpleSVC(ux,uy,(1000,-1),suffix,)
+
+    savePKL('Model/tmpreport.pkl', tmpreport)
+
     for k, v in tmpreport.iteritems():
         print k
         print v
+
 
     # for subParas in listSequments:
     #     for para in subParas:

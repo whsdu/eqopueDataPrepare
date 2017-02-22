@@ -2,7 +2,7 @@
 import json
 import MySQLdb
 import time
-from svmdataloader import *
+from centralizedInfo import *
 
 
 def getSQLdbinfo(datasource):

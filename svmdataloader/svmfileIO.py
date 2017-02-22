@@ -144,7 +144,8 @@ def fileNamingPolicyTwo(filename):
 """
 def getEngagedDimension(keyList):
     import json
-    from filePathManager import getCSVjsonPath
+    # from filePathManager import getCSVjsonPath
+    from centralizedInfo import getCSVjsonPath
     # global testJSON     ## to be centralized
     # global belleJSON    ## to be centralized
 

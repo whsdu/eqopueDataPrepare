@@ -1,5 +1,6 @@
 
 from dbloader import *
+from svmdataloader import *
 
 
 """
@@ -11,7 +12,7 @@ def getManifold(key,rootdir,namingPolicy,suffix):
     if fileCnt is not None:
         dataManifold = readcsvFileList(fileList)
     else:
-        return (None, "Something is woring in function getManiFold")
+        return (None, "Something is woring in function getManiFold" + fileList)
 
     suitsizeDictLists = dataManifold.get("belle_suitsize")
     scanDictLists = dataManifold.get("belle_3dmodel")
@@ -213,7 +214,7 @@ def list2nlist(lists):
     return (X,y)
 
 
-def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
+def getDataSetCSV(key,rootdir,fileNamingPolicyTwo,suffix):
     import logging
     logger = logging.getLogger("main.getDataSet")
 
@@ -320,10 +321,18 @@ def getDataSet(key,rootdir,fileNamingPolicyTwo,suffix):
     logger.debug(len(userinfoScanBoottreeAve[0].keys()))
     logger.debug(userinfoScanBoottreeAve[0])
 
-    rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x","size_y"])
+    # rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x","size_y"])
+    # rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "sex_x","size_y","sex_y","height","weight","usualsize"])
+    rX = removeDimensionsOrdered(userinfoScanBoottreeAve, ["userid", "styleid", "size_x","size_y","sex_y","height","weight","usualsize"])
+
     print rX[0]
     keys, lists = dicts2lists(rX)
     print keys
+    print keys[2:]
+    print len(keys[2:])
+    print len(lists[0][2:])
+    print keys[-21:]
+    print keys[-22]
     normalizedX,hehey,gap,nMin = normalizeByAxisZero(lists)
     print normalizedX[0]
     print hehey

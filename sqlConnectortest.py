@@ -1,7 +1,7 @@
 from dbloader import *
 import time
 from svmdataloader import *
-
+from preprocess import *
 
 
 
@@ -140,9 +140,16 @@ if __name__ == "__main__":
     dbname = "t_dlodb"
     dicts = sqlQuery(queryStatement,hostname,dbname)
 
-    # fixDicts = getDBuserscaninfo(queryStatement, hostname, dbname)
-    # print fixDicts[0].values()[4:]
-    # print len(fixDicts[0].values()[4:])
+    fixDicts = getDBuserscaninfo(queryStatement, hostname, dbname)
+    print fixDicts[0].values()[4:]
+    print len(fixDicts[0].values()[4:])
+    print ""
+
+    print len(fixDicts)
+    cd = dict()
+    for d in fixDicts:
+        cd[len(d.values()[4:])] = cd.get(len(d.values()[4:]),0)+1
+    print cd
     #
     # print " "
     # dbconnection,dbCur = testConnection(hostname,dbname)

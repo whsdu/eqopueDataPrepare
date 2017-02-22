@@ -1,6 +1,16 @@
 testStatementOne = """
-    select * from
-    dlo_3dscan
+    select t1.id,t1.scan_date,t1.scan_id,t1.customer_id,t1.customer_info,t1.measurement_items from
+    #select count(1) from
+    dlo_3dscan as t1
+    left join
+    (
+        select scan_id,max(scan_date) as ldate
+        from
+        dlo_3dscan
+        group by scan_id
+    ) as t2
+    on t1.scan_id = t2.scan_id and t1.scan_date = t2.ldate
+    where t2.scan_id is not null
     limit 100
 """
 

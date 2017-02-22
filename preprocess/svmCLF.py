@@ -28,7 +28,7 @@ def simpleSVC(X,y,paras,suffix = None,paraQue=None):
     sr = report.split()
     accu = float(sr[sr.index('total') + 1])
     if accu >= 0.75:
-        modelName = suffix+" "+key + '.pkl'
+        modelName = suffix+"_"+key + '.pkl'
         # with open('Model/' + modelName, 'wb') as f:
         #     pickle.dump(model, f)
         savePKL('Model/' + modelName,model)
