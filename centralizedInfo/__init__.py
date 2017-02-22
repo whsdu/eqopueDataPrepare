@@ -1,0 +1,1 @@
+from getConfig import *
