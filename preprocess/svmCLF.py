@@ -6,7 +6,7 @@ def savePKL(filepath,object):
 
     f.close()
 
-def simpleSVC(X,y,paras,suffix = None,paraQue=None):
+def simpleSVC(X,y,paras,suffix = None,threshold = 0.75,paraQue=None):
     from sklearn.cross_validation import train_test_split
     from sklearn.svm import SVC
     from sklearn.metrics import classification_report
@@ -27,7 +27,7 @@ def simpleSVC(X,y,paras,suffix = None,paraQue=None):
 
     sr = report.split()
     accu = float(sr[sr.index('total') + 1])
-    if accu >= 0.75:
+    if accu >= threshold:
         modelName = suffix+"_"+key + '.pkl'
         # with open('Model/' + modelName, 'wb') as f:
         #     pickle.dump(model, f)

@@ -48,6 +48,7 @@ if __name__ == "__main__":
         print v
 
 
+
     # for subParas in listSequments:
     #     for para in subParas:
     #         # tmpp = Process(target=simpleSVC, args=(ux,uy,para,paraQueue))
@@ -62,7 +63,7 @@ if __name__ == "__main__":
     #
     # for p in plist:
     #     paraDicts.update(p)
-    #
+    # #
     # for k,v in paraDicts.iteritems():
     #     sr = v.split()
     #     accu = float(sr[sr.index('total')+1])
